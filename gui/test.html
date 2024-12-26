@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Slideshow</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: black;
+        }
+        #videoPlayer {
+            width: 100vw;
+            height: 100vh;
+            object-fit: contain;  /* This prevents cropping */
+        }
+    </style>
+</head>
+<body>
+    <video id="videoPlayer" controls autoplay muted>  <!-- Added muted to ensure autoplay works -->
+        <source src="vid1.mp4" type="video/mp4">
+    </video>
+
+    <script>
+        const videos = [
+            "vid1.mp4",
+            "vid2.mp4",
+            "vid3.mp4"
+        ];
+        
+        let currentVideo = 0;
+        const videoPlayer = document.getElementById('videoPlayer');
+        
+        videoPlayer.onended = function() {
+            currentVideo = (currentVideo + 1) % videos.length;
+            videoPlayer.src = videos[currentVideo];
+            videoPlayer.play();
+        };
+    </script>
+</body>
+</html>
