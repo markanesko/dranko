@@ -57,14 +57,14 @@
         }
 
         let state = {
-            name: 'commercials',
+            name: 'result',
             credit: 0,
             alcohol: 0,
             currentMax: 2.0,
             timeLeft: 0.0,
-            alcoholScore: 0,
-            imagePath: 'img1.jpg',
-            qrPath: 'qr1.jpg',
+            alcoholScore: 345,
+            imagePath: 'ducko.jpg',
+            qrPath: 'qr.png',
             videos: [
                 'vid1.mp4',
                 'vid2.mp4',
@@ -87,7 +87,7 @@
                 if (state.name == 'commercials') {
                     if (prevState == null || prevState.name != 'commercials') {
                         //add video to body
-                        document.innerHTML = '';
+                        document.body.innerHTML = '';
                         const videoContainer = document.createElement('div');
                         videoContainer.className = 'video-container';
                         videoContainer.innerHTML = `
@@ -112,6 +112,62 @@
                     } else if (prevState.name == 'commercials') {
                         let credits = document.getElementById('creditsOverlay');
                         credits.innerHTML = `Trenutne pare za duckanje: ${state.credit}. Daj jos.`;
+                    }
+                } else if (state.name == 'canBlow') {
+                    //ima dovoljno para za duckanje
+                    // dodati timer na backednu, komentar ovdje jer cemo zaboraviti
+                    if (prevState == null || prevState.name != 'canBlow') {
+                        document.body.innerHTML = '';
+                        const instructions = document.createElement('div');
+                        instructions.innerHTML = `                    
+                        <div style="background: orange; height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center;">
+                            <h1 style="color: white; font-size: 4rem; text-align: center;">
+                                Imas para za duckanje. Pritisni strelicu desno za reklame.    
+                            </h1>
+                        </div>`;
+                        document.body.appendChild(instructions);
+                        prevState = { name: 'canBlow' };
+                    }
+                } else if (state.name == 'blowing') {
+                    if (prevState == null || prevState.name != 'blowing') {
+                        document.body.innerHTML = '';
+                        const blowing = document.createElement('div');
+                        blowing.innerHTML = `                    
+                        <div style="background: orange; height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center;">
+                            <h1 id="blowingId" style="color: white; font-size: 4rem; text-align: center;">
+                                Duckas ga dobro. Trenutni rezultat: 
+                                Alkohol: ${state.alcohol},
+                                Lokalni maksimum: ${state.currentMax},
+                                Vrijeme do kraja: ${state.timeLeft},   
+                            </h1>
+                        </div>`;
+                        document.body.appendChild(blowing);
+                        prevState = { name: 'blowing' };
+                    } else if (prevState.name == 'blowing') {
+                        let blowing = document.getElementById('blowingId');
+                        blowing.innerHTML = `Duckas ga. Trenutni rezultat: 
+                        Alkohol: ${state.alcohol},
+                        Lokalni maksimum: ${state.currentMax},
+                        Vrijeme do kraja: ${state.timeLeft},`;
+                    }
+                } else if (state.name == 'result') {
+                    if (prevState == null || prevState.name != 'result') {
+                        document.body.innerHTML = '';
+                        const result = document.createElement('div');
+                        result.innerHTML = `                    
+                        <div style="background: orange; height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                            <h1 style="color: white; font-size: 4rem; text-align: center;">
+                                Duckanje gotovo. Rezultat: 
+                                Alkohol: ${state.alcoholScore / 100}
+                            </h1>
+                            <div style="display: flex; height: 80%; width: 100%; justify-content: space-between; padding: 2rem;">
+                                <img src="${state.imagePath}" style="width: 45%; object-fit: contain;" />
+                                <img src="${state.qrPath}" style="width: 45%; object-fit: contain;" />
+                            </div>
+                        </div>`;
+
+                        document.body.appendChild(result);
+                        prevState = { name: 'result' };
                     }
                 }
 
