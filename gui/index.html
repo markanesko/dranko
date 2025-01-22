@@ -1,57 +1,127 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <link href="../bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <script src="../bootstrap/js/bootstrap.bundle.min.js"></script>
- 
+
     <title>Video Slideshow</title>
     <style>
-        body, html {
+        body,
+        html {
             margin: 0;
             padding: 0;
             height: 100vh;
+            width: 100vw;
             background: black;
             overflow: hidden;
         }
-        #videoPlayer {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
+
         .video-container {
+            position: relative;
             width: 100vw;
             height: 100vh;
-            display: flex;
+            /* display: flex; */
             align-items: center;
             justify-content: center;
         }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+
+        }
+
+        #creditsOverlay {
+            position: absolute;
+            bottom: 5%;
+            right: 5%;
+            /* transform: translate(-50%, -50%); */
+            color: white;
+            font-size: 2rem;
+            background: rgb(255, 142, 50);
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            z-index: 1;
+            text-align: center;
+        }
     </style>
 </head>
-<body>    
-    <div class="container-fluid video-container">
-        <video id="videoPlayer" controls autoplay muted>
-            <source src="vid1.mp4" type="video/mp4">
-        </video>
-    </div>
-</body>
+
+<body class="container-fluid">
 
     <script>
-        const videos = [
-            "vid1.mp4", 
-            "vid2.mp4",
-            "vid3.mp4"
-        ];
-        
-        let currentVideo = 0;
-        const videoPlayer = document.getElementById('videoPlayer');
-        
-        videoPlayer.onended = function() {
-            currentVideo = (currentVideo + 1) % videos.length;
-            videoPlayer.src = videos[currentVideo];
-            videoPlayer.play();
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        let state = {
+            name: 'commercials',
+            credit: 0,
+            alcohol: 0,
+            currentMax: 2.0,
+            timeLeft: 0.0,
+            alcoholScore: 0,
+            imagePath: 'img1.jpg',
+            qrPath: 'qr1.jpg',
+            videos: [
+                'vid1.mp4',
+                'vid2.mp4',
+                'vid3.mp4',
+            ]
         };
+
+        let prevState = null;
+        //on button down increment credit by 100
+        document.addEventListener('keydown', function (event) {
+            if (event.key == 'ArrowRight') {
+                state.credit += 100;
+            }
+        });
+
+        async function main() {
+            while (true) {
+                await sleep(250);
+
+                if (state.name == 'commercials') {
+                    if (prevState == null || prevState.name != 'commercials') {
+                        //add video to body
+                        document.innerHTML = '';
+                        const videoContainer = document.createElement('div');
+                        videoContainer.className = 'video-container';
+                        videoContainer.innerHTML = `
+                    <span id="creditsOverlay">Trenutne pare za duckanje: ${state.credit}. Daj jos.</span>
+                    <video id="videoPlayer" autoplay muted>
+                        <source src="vid1.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>`;
+
+                        document.body.appendChild(videoContainer);
+
+                        let currentVideo = 0;
+                        const videoPlayer = document.getElementById('videoPlayer');
+
+                        videoPlayer.onended = function () {
+                            currentVideo = (currentVideo + 1) % state.videos.length;
+                            videoPlayer.src = state.videos[currentVideo];
+                            videoPlayer.play();
+                        };
+
+                        prevState = { name: 'commercials' };
+                    } else if (prevState.name == 'commercials') {
+                        let credits = document.getElementById('creditsOverlay');
+                        credits.innerHTML = `Trenutne pare za duckanje: ${state.credit}. Daj jos.`;
+                    }
+                }
+
+            }
+        }
+
+        main();
+
+
     </script>
+</body>
+
 </html>
