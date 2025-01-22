@@ -57,7 +57,7 @@
         }
 
         let state = {
-            name: 'result',
+            name: 'commercials',
             credit: 0,
             alcohol: 0,
             currentMax: 2.0,
@@ -73,6 +73,18 @@
         };
 
         let prevState = null;
+
+
+        const states = ['commercials', 'canBlow', 'blowing', 'result'];
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key == 'ArrowUp') {
+                state.name = states[(states.indexOf(state.name) + 1) % states.length];
+            }
+        });
+
+
+
         //on button down increment credit by 100
         document.addEventListener('keydown', function (event) {
             if (event.key == 'ArrowRight') {
