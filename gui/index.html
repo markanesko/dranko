@@ -15,13 +15,13 @@
             width: 100vw;
             background: black;
             overflow: hidden;
+            font-family: 'Arial', sans-serif;
         }
 
         .video-container {
             position: relative;
             width: 100vw;
             height: 100vh;
-            /* display: flex; */
             align-items: center;
             justify-content: center;
         }
@@ -37,14 +37,76 @@
             position: absolute;
             bottom: 5%;
             right: 5%;
-            /* transform: translate(-50%, -50%); */
             color: white;
             font-size: 2rem;
-            background: rgb(255, 142, 50);
-            padding: 1rem 2rem;
-            border-radius: 10px;
+            background: rgba(255, 142, 50, 0.9);
+            padding: 1.5rem 2.5rem;
+            border-radius: 15px;
             z-index: 1;
             text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        .screen-container {
+            background: orange;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 2rem;
+        }
+
+        .message-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem 3rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            max-width: 80%;
+        }
+
+        .blowing-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .result-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            width: 100%;
+            height: 100%;
+        }
+
+        .images-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        .result-image {
+            max-width: 40%;
+            max-height: 80%;
+            object-fit: contain;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
         }
     </style>
 </head>
@@ -52,143 +114,174 @@
 <body class="container-fluid">
 
     <script>
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
+      async function fetchState() {
+        try {
+          const response = await fetch('http://localhost:8000');
+          if (response.ok) {
+            return await response.json();
+          } else {
+            console.error('Failed to fetch state:', response.statusText);
+            return null;
+          }
+        } catch (error) {
+          console.error('Error fetching state:', error);
+          return null;
         }
+      }
 
-        let state = {
-            name: 'commercials',
-            credit: 0,
-            alcohol: 0,
-            currentMax: 2.0,
-            timeLeft: 0.0,
-            alcoholScore: 345,
-            imagePath: 'ducko.jpg',
-            qrPath: 'qr.png',
-            videos: [
-                'vid1.mp4',
-                'vid2.mp4',
-                'vid3.mp4',
-            ]
-        };
+      function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
 
-        let prevState = null;
+      let state = {
+        name: 'commercials',
+        credit: 0,
+        alcohol: 0,
+        currentMax: 2.0,
+        timeLeft: 0.0,
+        alcoholResult: 345,
+        imagePath: 'ducko.jpg',
+        qrPath: 'qr.png',
+        videos: [
+          'vid1.mp4',
+          'vid2.mp4',
+          'vid3.mp4',
+        ]
+      };
 
+      let prevState = null;
 
-        const states = ['commercials', 'canBlow', 'blowing', 'result'];
+      const states = ['commercials', 'canBlow', 'blowing', 'result'];
 
-        document.addEventListener('keydown', function (event) {
-            if (event.key == 'ArrowUp') {
-                state.name = states[(states.indexOf(state.name) + 1) % states.length];
+      // TESTIRANJE
+      document.addEventListener('keydown', function (event) {
+        if (event.key == 'ArrowUp') {
+          state.alcohol = 0;
+          state.name = states[(states.indexOf(state.name) + 1) % states.length];
+        } else if (event.key == 'ArrowDown') {
+          state.alcohol = 0;
+          state.name = states[(states.indexOf(state.name) + states.length - 1) % states.length];
+        } else if (event.key == 'ArrowRight') {
+          state.credit += 100;
+        } else if (event.key == 'ArrowLeft') {
+          state.alcohol += 10;
+        }
+      });
+
+      (async function mainLoop() {
+        while (true) {
+
+          const fetchedState = await fetchState();
+          if (fetchedState) {
+            state = fetchedState;
+          }
+
+          await sleep(250);
+
+          const stateRootElement = document.getElementById(state.name);
+          if (state.name === 'commercials') {
+            if (!stateRootElement) {
+                document.body.innerHTML = `
+                    <div id="commercials" class="video-container">
+                        <span id="creditsOverlay">💰 ${state.credit} kredita<br>Ubaci još!</span>
+                        <video id="videoPlayer" autoplay muted>
+                            <source src="vid1.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>`;
+
+                let currentVideo = 0;
+                const videoPlayer = document.getElementById('videoPlayer');
+
+                videoPlayer.onended = function () {
+                    currentVideo = (currentVideo + 1) % state.videos.length;
+                    videoPlayer.src = state.videos[currentVideo];
+                    videoPlayer.play();
+                };
             }
-        });
 
-
-
-        //on button down increment credit by 100
-        document.addEventListener('keydown', function (event) {
-            if (event.key == 'ArrowRight') {
-                state.credit += 100;
+            const credits = document.getElementById('creditsOverlay');
+            credits.innerHTML = `💰 ${state.credit} kredita<br>Ubaci još!`;
+          } else if (state.name === 'canBlow') {
+            if (!stateRootElement) {
+                document.body.innerHTML = `
+                    <div id="canBlow" class="screen-container">
+                        <div class="message-box">
+                            <h1 style="color: white; font-size: 4rem; margin: 0;">
+                                🎉 Spremno za mjerenje!
+                            </h1>
+                            <p style="color: white; font-size: 2rem; margin-top: 1rem;">
+                                Pritisni start da počneš dućkanje
+                            </p>
+                        </div>
+                    </div>`;
             }
-        });
-
-        async function main() {
-            while (true) {
-                await sleep(250);
-
-                if (state.name == 'commercials') {
-                    if (prevState == null || prevState.name != 'commercials') {
-                        //add video to body
-                        document.body.innerHTML = '';
-                        const videoContainer = document.createElement('div');
-                        videoContainer.className = 'video-container';
-                        videoContainer.innerHTML = `
-                    <span id="creditsOverlay">Trenutne pare za duckanje: ${state.credit}. Daj jos.</span>
-                    <video id="videoPlayer" autoplay muted>
-                        <source src="vid1.mp4" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>`;
-
-                        document.body.appendChild(videoContainer);
-
-                        let currentVideo = 0;
-                        const videoPlayer = document.getElementById('videoPlayer');
-
-                        videoPlayer.onended = function () {
-                            currentVideo = (currentVideo + 1) % state.videos.length;
-                            videoPlayer.src = state.videos[currentVideo];
-                            videoPlayer.play();
-                        };
-
-                        prevState = { name: 'commercials' };
-                    } else if (prevState.name == 'commercials') {
-                        let credits = document.getElementById('creditsOverlay');
-                        credits.innerHTML = `Trenutne pare za duckanje: ${state.credit}. Daj jos.`;
-                    }
-                } else if (state.name == 'canBlow') {
-                    //ima dovoljno para za duckanje
-                    // dodati timer na backednu, komentar ovdje jer cemo zaboraviti
-                    if (prevState == null || prevState.name != 'canBlow') {
-                        document.body.innerHTML = '';
-                        const instructions = document.createElement('div');
-                        instructions.innerHTML = `                    
-                        <div style="background: orange; height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center;">
-                            <h1 style="color: white; font-size: 4rem; text-align: center;">
-                                Imas para za duckanje. Pritisni strelicu desno za reklame.    
+          } else if (state.name === 'blowing') {
+            if (!stateRootElement) {
+                document.body.innerHTML = `
+                    <div id="blowing" class="screen-container">
+                        <div class="message-box">
+                            <h1 style="color: white; font-size: 3.5rem; margin: 0;">
+                                🌬️ Dućkanje in progress...
                             </h1>
-                        </div>`;
-                        document.body.appendChild(instructions);
-                        prevState = { name: 'canBlow' };
-                    }
-                } else if (state.name == 'blowing') {
-                    if (prevState == null || prevState.name != 'blowing') {
-                        document.body.innerHTML = '';
-                        const blowing = document.createElement('div');
-                        blowing.innerHTML = `                    
-                        <div style="background: orange; height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center;">
-                            <h1 id="blowingId" style="color: white; font-size: 4rem; text-align: center;">
-                                Duckas ga dobro. Trenutni rezultat: 
-                                Alkohol: ${state.alcohol},
-                                Lokalni maksimum: ${state.currentMax},
-                                Vrijeme do kraja: ${state.timeLeft},   
-                            </h1>
-                        </div>`;
-                        document.body.appendChild(blowing);
-                        prevState = { name: 'blowing' };
-                    } else if (prevState.name == 'blowing') {
-                        let blowing = document.getElementById('blowingId');
-                        blowing.innerHTML = `Duckas ga. Trenutni rezultat: 
-                        Alkohol: ${state.alcohol},
-                        Lokalni maksimum: ${state.currentMax},
-                        Vrijeme do kraja: ${state.timeLeft},`;
-                    }
-                } else if (state.name == 'result') {
-                    if (prevState == null || prevState.name != 'result') {
-                        document.body.innerHTML = '';
-                        const result = document.createElement('div');
-                        result.innerHTML = `                    
-                        <div style="background: orange; height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                            <h1 style="color: white; font-size: 4rem; text-align: center;">
-                                Duckanje gotovo. Rezultat: 
-                                Alkohol: ${state.alcoholScore / 100}
-                            </h1>
-                            <div style="display: flex; height: 80%; width: 100%; justify-content: space-between; padding: 2rem;">
-                                <img src="${state.imagePath}" style="width: 45%; object-fit: contain;" />
-                                <img src="${state.qrPath}" style="width: 45%; object-fit: contain;" />
+                            <div class="blowing-stats">
+                                <div class="stat-item">
+                                    <h3 style="color: white; margin: 0;">Alkohol</h3>
+                                    <p id="alcoholValue" style="color: white; font-size: 2rem; margin: 0.5rem 0;">
+                                        ${state.alcohol}
+                                    </p>
+                                </div>
+                                <div class="stat-item">
+                                    <h3 style="color: white; margin: 0;">Maksimum</h3>
+                                    <p id="maxValue" style="color: white; font-size: 2rem; margin: 0.5rem 0;">
+                                        ${state.currentMax}
+                                    </p>
+                                </div>
+                                <div class="stat-item">
+                                    <h3 style="color: white; margin: 0;">Preostalo</h3>
+                                    <p id="timeValue" style="color: white; font-size: 2rem; margin: 0.5rem 0;">
+                                        ${state.timeLeft}s
+                                    </p>
+                                </div>
                             </div>
-                        </div>`;
+                        </div>
+                    </div>`;
+            }
 
-                        document.body.appendChild(result);
-                        prevState = { name: 'result' };
-                    }
+            document.getElementById('alcoholValue').textContent = state.alcohol;
+            document.getElementById('maxValue').textContent = state.currentMax;
+            document.getElementById('timeValue').textContent = `${state.timeLeft}s`;
+
+          } else if (state.name === 'result') {
+            if (!stateRootElement) {
+                const images = [];
+                if (state.imagePath && state.imagePath.trim() !== '') {
+                    images.push(`<img src="${state.imagePath}" class="result-image" alt="User photo" />`);
+                }
+                if (state.qrPath && state.qrPath.trim() !== '') {
+                    images.push(`<img src="${state.qrPath}" class="result-image" alt="QR Code" />`);
                 }
 
+                document.body.innerHTML = `
+                    <div id="result" class="screen-container">
+                        <div class="result-container" style="margin: 2rem 0;">
+                            <div class="message-box">
+                                <h1 style="color: white; font-size: 4rem; margin: 0;">
+                                    🎯 Rezultat dućkanja
+                                </h1>
+                                <p style="color: white; font-size: 3rem; margin: 1rem 0;">
+                                    ${state.alcoholResult / 100} ‰
+                                </p>
+                            </div>
+                            <div class="images-container">
+                                ${images.join('')}
+                            </div>
+                        </div>
+                    </div>`;
             }
+          }
         }
-
-        main();
-
-
+      })();
     </script>
 </body>
 
