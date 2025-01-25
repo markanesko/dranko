@@ -33,7 +33,7 @@
 
         }
 
-        #creditsOverlay {
+        #credits-overlay {
             position: absolute;
             bottom: 5%;
             right: 5%;
@@ -149,11 +149,128 @@
         ]
       };
 
-      let prevState = null;
+      const stateRenderers = {
+        commercials: {
+          staticContent: (state) => `
+            <div id="commercials" class="video-container">
+                <span id="credits-overlay">💰 0 kredita</span>
+                <video id="videoPlayer" autoplay muted>
+                    <source src="vid1.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>`,
 
+          updateDynamic: (state) => {
+            document.getElementById('credits-overlay').innerHTML = 
+              `💰 ${state.credit} kredita`;
+          },
+
+          onMount: (state) => {
+            let currentVideo = 0;
+            const videoPlayer = document.getElementById('videoPlayer');
+            videoPlayer.onended = function () {
+              currentVideo = (currentVideo + 1) % state.videos.length;
+              videoPlayer.src = state.videos[currentVideo];
+              videoPlayer.play();
+            };
+          }
+        },
+
+        canBlow: {
+          staticContent: (state) => `
+            <div id="canBlow" class="screen-container">
+                <div class="message-box">
+                    <h1 style="color: white; font-size: 4rem; margin: 0;">
+                        🎉 Spremno za mjerenje!
+                    </h1>
+                    <p style="color: white; font-size: 2rem; margin-top: 1rem;">
+                        Pritisni start da počneš dućkanje
+                    </p>
+                </div>
+            </div>`,
+
+          updateDynamic: () => {} // Rezultat, nema mijenjanja
+        },
+
+        blowing: {
+          staticContent: (state) => `
+            <div id="blowing" class="screen-container">
+                <div class="message-box">
+                    <h1 style="color: white; font-size: 3.5rem; margin: 0;">
+                        🌬️ Dućkanje in progress...
+                    </h1>
+                    <div class="blowing-stats">
+                        <div class="stat-item">
+                            <h3 style="color: white; margin: 0;">Alkohol</h3>
+                            <p id="blowing-alcohol" style="color: white; font-size: 2rem; margin: 0.5rem 0;"></p>
+                        </div>
+                        <div class="stat-item">
+                            <h3 style="color: white; margin: 0;">Maksimum</h3>
+                            <p id="blowing-max" style="color: white; font-size: 2rem; margin: 0.5rem 0;"></p>
+                        </div>
+                        <div class="stat-item">
+                            <h3 style="color: white; margin: 0;">Preostalo</h3>
+                            <p id="blowing-time" style="color: white; font-size: 2rem; margin: 0.5rem 0;"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>`,
+
+          updateDynamic: (state) => {
+            document.getElementById('blowing-alcohol').textContent = state.alcohol;
+            document.getElementById('blowing-max').textContent = state.currentMax;
+            document.getElementById('blowing-time').textContent = `${state.timeLeft}s`;
+          }
+        },
+
+        result: {
+          staticContent: (state) => {
+            const images = [];
+            if (state.imagePath && state.imagePath.trim() !== '') {
+                images.push(`<img src="${state.imagePath}" class="result-image" alt="User photo" />`);
+            }
+            if (state.qrPath && state.qrPath.trim() !== '') {
+                images.push(`<img src="${state.qrPath}" class="result-image" alt="QR Code" />`);
+            }
+
+            return `
+              <div id="result" class="screen-container">
+                  <div class="result-container" style="margin: 2rem 0;">
+                      <div class="message-box">
+                          <h1 style="color: white; font-size: 4rem; margin: 0;">
+                              🎯 Rezultat dućkanja
+                          </h1>
+                          <p id="result-value" style="color: white; font-size: 3rem; margin: 1rem 0;"></p>
+                      </div>
+                      <div class="images-container">
+                          ${images.join('')}
+                      </div>
+                  </div>
+              </div>`;
+          },
+
+          updateDynamic: (state) => {
+            document.getElementById('result-value').textContent = `${state.alcoholResult / 100} ‰`;
+          }
+        }
+      };
+
+      function renderState(state) {
+        const renderer = stateRenderers[state.name];
+        if (!renderer) return;
+
+        const stateRootElement = document.getElementById(state.name);
+        if (!stateRootElement) {
+          document.body.innerHTML = renderer.staticContent(state);
+          if (renderer.onMount) {
+            renderer.onMount(state);
+          }
+        }
+        renderer.updateDynamic(state);
+      }
+
+      // Testing keyboard controls
       const states = ['commercials', 'canBlow', 'blowing', 'result'];
-
-      // TESTIRANJE
       document.addEventListener('keydown', function (event) {
         if (event.key == 'ArrowUp') {
           state.alcohol = 0;
@@ -168,118 +285,16 @@
         }
       });
 
+      // Main loop
       (async function mainLoop() {
         while (true) {
-
           const fetchedState = await fetchState();
           if (fetchedState) {
             state = fetchedState;
           }
-
           await sleep(250);
 
-          const stateRootElement = document.getElementById(state.name);
-          if (state.name === 'commercials') {
-            if (!stateRootElement) {
-                document.body.innerHTML = `
-                    <div id="commercials" class="video-container">
-                        <span id="creditsOverlay">💰 ${state.credit} kredita<br>Ubaci još!</span>
-                        <video id="videoPlayer" autoplay muted>
-                            <source src="vid1.mp4" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                    </div>`;
-
-                let currentVideo = 0;
-                const videoPlayer = document.getElementById('videoPlayer');
-
-                videoPlayer.onended = function () {
-                    currentVideo = (currentVideo + 1) % state.videos.length;
-                    videoPlayer.src = state.videos[currentVideo];
-                    videoPlayer.play();
-                };
-            }
-
-            const credits = document.getElementById('creditsOverlay');
-            credits.innerHTML = `💰 ${state.credit} kredita<br>Ubaci još!`;
-          } else if (state.name === 'canBlow') {
-            if (!stateRootElement) {
-                document.body.innerHTML = `
-                    <div id="canBlow" class="screen-container">
-                        <div class="message-box">
-                            <h1 style="color: white; font-size: 4rem; margin: 0;">
-                                🎉 Spremno za mjerenje!
-                            </h1>
-                            <p style="color: white; font-size: 2rem; margin-top: 1rem;">
-                                Pritisni start da počneš dućkanje
-                            </p>
-                        </div>
-                    </div>`;
-            }
-          } else if (state.name === 'blowing') {
-            if (!stateRootElement) {
-                document.body.innerHTML = `
-                    <div id="blowing" class="screen-container">
-                        <div class="message-box">
-                            <h1 style="color: white; font-size: 3.5rem; margin: 0;">
-                                🌬️ Dućkanje in progress...
-                            </h1>
-                            <div class="blowing-stats">
-                                <div class="stat-item">
-                                    <h3 style="color: white; margin: 0;">Alkohol</h3>
-                                    <p id="alcoholValue" style="color: white; font-size: 2rem; margin: 0.5rem 0;">
-                                        ${state.alcohol}
-                                    </p>
-                                </div>
-                                <div class="stat-item">
-                                    <h3 style="color: white; margin: 0;">Maksimum</h3>
-                                    <p id="maxValue" style="color: white; font-size: 2rem; margin: 0.5rem 0;">
-                                        ${state.currentMax}
-                                    </p>
-                                </div>
-                                <div class="stat-item">
-                                    <h3 style="color: white; margin: 0;">Preostalo</h3>
-                                    <p id="timeValue" style="color: white; font-size: 2rem; margin: 0.5rem 0;">
-                                        ${state.timeLeft}s
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-            }
-
-            document.getElementById('alcoholValue').textContent = state.alcohol;
-            document.getElementById('maxValue').textContent = state.currentMax;
-            document.getElementById('timeValue').textContent = `${state.timeLeft}s`;
-
-          } else if (state.name === 'result') {
-            if (!stateRootElement) {
-                const images = [];
-                if (state.imagePath && state.imagePath.trim() !== '') {
-                    images.push(`<img src="${state.imagePath}" class="result-image" alt="User photo" />`);
-                }
-                if (state.qrPath && state.qrPath.trim() !== '') {
-                    images.push(`<img src="${state.qrPath}" class="result-image" alt="QR Code" />`);
-                }
-
-                document.body.innerHTML = `
-                    <div id="result" class="screen-container">
-                        <div class="result-container" style="margin: 2rem 0;">
-                            <div class="message-box">
-                                <h1 style="color: white; font-size: 4rem; margin: 0;">
-                                    🎯 Rezultat dućkanja
-                                </h1>
-                                <p style="color: white; font-size: 3rem; margin: 1rem 0;">
-                                    ${state.alcoholResult / 100} ‰
-                                </p>
-                            </div>
-                            <div class="images-container">
-                                ${images.join('')}
-                            </div>
-                        </div>
-                    </div>`;
-            }
-          }
+          renderState(state);
         }
       })();
     </script>
