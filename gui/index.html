@@ -186,7 +186,8 @@
         credit: 0,
         alcohol: 0,
         currentMax: 2.0,
-        timeLeft: 0.0,
+        blowingTimeLeft: 0,
+        resultScreenTimeLeft: 0,
         alcoholResult: 345,
         imagePath: 'ducko.jpg',
         qrPath: 'qr.png',
@@ -282,7 +283,7 @@
             document.getElementById('blowing-alcohol-gauge').style.left = `${gaugePercentage}%`;
             document.getElementById('blowing-alcohol').textContent = `${permille.toFixed(2)}‰`;
             document.getElementById('blowing-max').textContent = `${(state.currentMax / 100).toFixed(2)}‰`;
-            document.getElementById('blowing-time').textContent = `${state.timeLeft}s`;
+            document.getElementById('blowing-time').textContent = `${state.blowingTimeLeft}s`;
           }
         },
 
@@ -304,6 +305,7 @@
                                   🎯 Rezultat dućkanja
                               </h1>
                               <p id="result-value" style="color: white; font-size: 3rem; margin: 1rem 0;"></p>
+                              <p id="result-time-left" style="color: white; font-size: 2rem; margin: 1rem 0;"></p>
                           </div>
                           <div class="images-container">
                               ${images.join('')}
@@ -314,6 +316,7 @@
 
           updateDynamic: (state) => {
             document.getElementById('result-value').textContent = `${state.alcoholResult / 100} ‰`;
+            document.getElementById('result-time-left').textContent = `${state.resultScreenTimeLeft}s`;
           }
         }
       };
