@@ -77,11 +77,59 @@
             margin-top: 2rem;
         }
 
+        .gauge-container {
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(
+                to right,
+                #4CAF50,    /* Start with green */
+                #FFC107,    /* Transition to yellow */
+                #FF5252     /* End with red */
+            );
+            border-radius: 15px;
+            overflow: visible;
+            position: relative;
+            margin-top: 0.5rem;
+        }
+
+        .gauge-indicator {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 15px solid white;
+            top: -10px;
+            transform: translateX(-50%);
+            transition: left 0.3s ease;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+        }
+
+        .gauge-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
         .stat-item {
             background: rgba(255, 255, 255, 0.15);
-            padding: 1rem;
+            padding: 1.5rem;
             border-radius: 12px;
             text-align: center;
+        }
+
+        .stat-item h3 {
+            font-size: 1.5rem !important;
+            margin-bottom: 1rem !important;
+        }
+
+        .stat-item p {
+            font-size: 2.5rem !important;
         }
 
         .result-container {
@@ -152,16 +200,16 @@
       const stateRenderers = {
         commercials: {
           staticContent: (state) => `
-            <div id="commercials" class="video-container">
-                <span id="credits-overlay">💰 0 kredita</span>
-                <video id="videoPlayer" autoplay muted>
-                    <source src="vid1.mp4" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            </div>`,
+                <div id="commercials" class="video-container">
+                    <span id="credits-overlay">💰 0 kredita</span>
+                    <video id="videoPlayer" autoplay muted>
+                        <source src="vid1.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>`,
 
           updateDynamic: (state) => {
-            document.getElementById('credits-overlay').innerHTML = 
+            document.getElementById('credits-overlay').innerHTML =
               `💰 ${state.credit} kredita`;
           },
 
@@ -178,47 +226,62 @@
 
         canBlow: {
           staticContent: (state) => `
-            <div id="canBlow" class="screen-container">
-                <div class="message-box">
-                    <h1 style="color: white; font-size: 4rem; margin: 0;">
-                        🎉 Spremno za mjerenje!
-                    </h1>
-                    <p style="color: white; font-size: 2rem; margin-top: 1rem;">
-                        Pritisni start da počneš dućkanje
-                    </p>
-                </div>
-            </div>`,
+                <div id="canBlow" class="screen-container">
+                    <div class="message-box">
+                        <h1 style="color: white; font-size: 4rem; margin: 0;">
+                            🎉 Spremno za mjerenje!
+                        </h1>
+                        <p style="color: white; font-size: 2rem; margin-top: 1rem;">
+                            Pritisni start da počneš dućkanje
+                        </p>
+                    </div>
+                </div>`,
 
-          updateDynamic: () => {} // Rezultat, nema mijenjanja
+          updateDynamic: () => { } // Rezultat, nema mijenjanja
         },
 
         blowing: {
           staticContent: (state) => `
-            <div id="blowing" class="screen-container">
-                <div class="message-box">
-                    <h1 style="color: white; font-size: 3.5rem; margin: 0;">
-                        🌬️ Dućkanje in progress...
-                    </h1>
-                    <div class="blowing-stats">
-                        <div class="stat-item">
-                            <h3 style="color: white; margin: 0;">Alkohol</h3>
-                            <p id="blowing-alcohol" style="color: white; font-size: 2rem; margin: 0.5rem 0;"></p>
-                        </div>
-                        <div class="stat-item">
-                            <h3 style="color: white; margin: 0;">Maksimum</h3>
-                            <p id="blowing-max" style="color: white; font-size: 2rem; margin: 0.5rem 0;"></p>
-                        </div>
-                        <div class="stat-item">
-                            <h3 style="color: white; margin: 0;">Preostalo</h3>
-                            <p id="blowing-time" style="color: white; font-size: 2rem; margin: 0.5rem 0;"></p>
+                <div id="blowing" class="screen-container">
+                    <div class="message-box" style="min-width: 90%; padding: 3rem 4rem;">
+                        <h1 style="color: white; font-size: 4.5rem; margin: 0;">
+                            🌬️ Dućkanje in progress...
+                        </h1>
+                        <div class="blowing-stats" style="gap: 2.5rem; margin-top: 3rem;">
+                            <div class="stat-item" style="padding: 2rem;">
+                                <h3 style="color: white; margin: 0; font-size: 2rem;">Alkohol</h3>
+                                <div class="gauge-container" style="height: 50px;">
+                                    <div id="blowing-alcohol-gauge" class="gauge-indicator"></div>
+                                    <div id="blowing-alcohol" class="gauge-text" style="font-size: 2rem;"></div>
+                                </div>
+                            </div>
+                            <div class="stat-item" style="padding: 2rem;">
+                                <h3 style="color: white; margin: 0; font-size: 2rem;">Maksimum</h3>
+                                <p id="blowing-max" style="color: white; margin: 0.5rem 0; font-size: 3rem;"></p>
+                            </div>
+                            <div class="stat-item" style="padding: 2rem;">
+                                <h3 style="color: white; margin: 0; font-size: 2rem;">Preostalo</h3>
+                                <p id="blowing-time" style="color: white; margin: 0.5rem 0; font-size: 3rem;"></p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>`,
+                </div>`,
 
           updateDynamic: (state) => {
-            document.getElementById('blowing-alcohol').textContent = state.alcohol;
-            document.getElementById('blowing-max').textContent = state.currentMax;
+            const permille = state.alcohol / 100;
+            let gaugePercentage;
+
+            if (permille >= 0.8) {
+              gaugePercentage = 100;
+            } else if (permille >= 0.3) {
+              gaugePercentage = 60 + ((permille - 0.3) / 0.5) * 40;
+            } else {
+              gaugePercentage = (permille / 0.3) * 60;
+            }
+
+            document.getElementById('blowing-alcohol-gauge').style.left = `${gaugePercentage}%`;
+            document.getElementById('blowing-alcohol').textContent = `${permille.toFixed(2)}‰`;
+            document.getElementById('blowing-max').textContent = `${(state.currentMax / 100).toFixed(2)}‰`;
             document.getElementById('blowing-time').textContent = `${state.timeLeft}s`;
           }
         },
@@ -227,26 +290,26 @@
           staticContent: (state) => {
             const images = [];
             if (state.imagePath && state.imagePath.trim() !== '') {
-                images.push(`<img src="${state.imagePath}" class="result-image" alt="User photo" />`);
+              images.push(`<img src="${state.imagePath}" class="result-image" alt="User photo" />`);
             }
             if (state.qrPath && state.qrPath.trim() !== '') {
-                images.push(`<img src="${state.qrPath}" class="result-image" alt="QR Code" />`);
+              images.push(`<img src="${state.qrPath}" class="result-image" alt="QR Code" />`);
             }
 
             return `
-              <div id="result" class="screen-container">
-                  <div class="result-container" style="margin: 2rem 0;">
-                      <div class="message-box">
-                          <h1 style="color: white; font-size: 4rem; margin: 0;">
-                              🎯 Rezultat dućkanja
-                          </h1>
-                          <p id="result-value" style="color: white; font-size: 3rem; margin: 1rem 0;"></p>
+                  <div id="result" class="screen-container">
+                      <div class="result-container" style="margin: 2rem 0;">
+                          <div class="message-box">
+                              <h1 style="color: white; font-size: 4rem; margin: 0;">
+                                  🎯 Rezultat dućkanja
+                              </h1>
+                              <p id="result-value" style="color: white; font-size: 3rem; margin: 1rem 0;"></p>
+                          </div>
+                          <div class="images-container">
+                              ${images.join('')}
+                          </div>
                       </div>
-                      <div class="images-container">
-                          ${images.join('')}
-                      </div>
-                  </div>
-              </div>`;
+                  </div>`;
           },
 
           updateDynamic: (state) => {
@@ -280,8 +343,10 @@
           state.name = states[(states.indexOf(state.name) + states.length - 1) % states.length];
         } else if (event.key == 'ArrowRight') {
           state.credit += 100;
-        } else if (event.key == 'ArrowLeft') {
-          state.alcohol += 10;
+        } else if (event.key.toUpperCase() === 'K') {
+          state.alcohol = Math.max(0, state.alcohol - 1); // Prevent negative alcohol values
+        } else if (event.key.toUpperCase() === 'L') {
+          state.alcohol += 1;
         }
       });
 
